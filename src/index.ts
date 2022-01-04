@@ -1,0 +1,77 @@
+import fs from 'fs';
+import path from 'path';
+
+import { useVGAPalette } from './utils/colors';
+
+import { CHARACTERS, HEADER_OFFSETS } from './common/constants';
+import { decode } from './common/encoding';
+
+
+const read = (tdf: string) => {
+  const tdfPath = path.resolve(process.cwd(), tdf);
+  console.log(`Reading ${tdfPath}...`);
+  const buffer = fs.readFileSync(tdfPath, null);
+
+  const header = getHeader(buffer);
+}
+
+const getHeader = (buffer: Buffer, index: number = 0) => {
+  const nameLength = buffer.readUInt8(HEADER_OFFSETS.NAME_LENGTH);
+  const name = buffer.subarray(HEADER_OFFSETS.NAME, HEADER_OFFSETS.NAME + (nameLength ?? HEADER_OFFSETS.NAME))
+    .toString('latin1')
+    // Remove clutter if size i 12 and but not all space is used
+    .replace(/\u0000/g, '');
+
+  const letterSpacing = buffer.readUInt8(HEADER_OFFSETS.LETTER_SPACING);
+  const type = buffer.readUInt8(41);
+
+  const blockSize = buffer.readUInt16LE(HEADER_OFFSETS.BLOCK_SIZE);
+  const characters = buffer.subarray(45, 45 + 188);
+
+  const data = buffer.subarray(233, 233 + blockSize);
+
+  for (let i = 0; i < 188 / 2; i += 2) {
+    const character = CHARACTERS[i / 2];
+    let offset = characters.readUInt16LE(i);
+
+    if (offset !== 0xffff) { // Character not defineds
+      const w = data.readUInt8(offset++);
+      const h = data.readUInt8(offset++);
+
+      console.log(`== START [${character}]: { w: ${w}, h: ${h}, offset: ${offset} } `.padEnd(48, '='))
+
+      while (true) {
+        const charByte = data[offset++]
+        if (charByte === 0) {
+          console.log()
+          break;
+        }
+
+        if (charByte === 0x0D) { // Carriage return
+          process.stdout.write('\n');
+          continue;
+        }
+      
+        const char = decode(charByte);
+        if (!char) {
+          continue;
+        }
+
+        const color = data[offset++];
+        const bg = Math.floor(color / 16);
+        const fg = color % 16;
+        // const rendered = `\x1b[38;5;${fg}m${char}\x1b[0m`;
+        // console.log(bg, fg);
+    
+        if (char) {
+          process.stdout.write(useVGAPalette(fg, char));
+        }
+      }
+    } else {
+      console.log(`[${character}]: not defined`)
+    }
+    console.log(`== END [${character}] `.padEnd(48, '=') + '\n')
+  }
+}
+
+read('fonts/colossal.tdf');
