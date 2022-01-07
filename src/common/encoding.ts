@@ -164,7 +164,11 @@ export const IBM_EXTENDED_CHARACTER_SET = [
   '\u00A0', // 255: Non breaking space
 ]
 
-export const decode = (char: number) => {
+export const decode = (char?: number): string | undefined => {
+  if (!char) {
+    return undefined;
+  }
+
   // (13) Carriage return
   if (char === 0x0D) {
     return '\n';

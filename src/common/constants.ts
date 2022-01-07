@@ -1,3 +1,5 @@
+import { Char } from "./types";
+
 export const HEADER_OFFSETS = {
   NAME_LENGTH: 24,    // Length: 1
   NAME: 25,           // Length: 0-12
@@ -6,4 +8,4 @@ export const HEADER_OFFSETS = {
   BLOCK_SIZE: 43      // Length: 2
 }
 
-export const CHARACTERS = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~';
+export const CHARACTERS: Char[] = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~' as unknown as Char[];
